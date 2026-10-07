@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+data/chronicles.json
+.vscode/
+.idea/
+venv/
