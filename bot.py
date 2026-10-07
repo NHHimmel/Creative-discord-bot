@@ -75,6 +75,16 @@ class DramaticNarratorBot(commands.Bot):
         )
         await self.change_presence(status=discord.Status.online, activity=activity)
 
+    async def on_guild_join(self, guild: discord.Guild):
+        logger.info(f"🎉 Joined new guild: {guild.name} (ID: {guild.id}). Syncing commands...")
+        try:
+            # Sync guild-specific command tree immediately so commands show instantly
+            self.tree.copy_global_to(guild=guild)
+            synced = await self.tree.sync(guild=guild)
+            logger.info(f"Successfully synced {len(synced)} command(s) to new guild: {guild.name}")
+        except Exception as e:
+            logger.error(f"Failed to sync commands to new guild {guild.name}: {e}")
+
     async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
         logger.error(f"Command error in {interaction.command.name if interaction.command else 'Unknown'}: {error}")
         msg = f"⚡ The dramatic tension caused an unexpected anomaly: {error}"
@@ -82,6 +92,23 @@ class DramaticNarratorBot(commands.Bot):
             await interaction.followup.send(msg, ephemeral=True)
         else:
             await interaction.response.send_message(msg, ephemeral=True)
+
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+
+        # Instant manual sync trigger: type '!sync' in any server where the bot has joined
+        if message.content.strip().lower() == "!sync" and message.guild:
+            if message.author.guild_permissions.administrator or await self.is_owner(message.author):
+                try:
+                    self.tree.copy_global_to(guild=message.guild)
+                    synced = await self.tree.sync(guild=message.guild)
+                    await message.channel.send(f"✅ **Synced {len(synced)} slash commands instantly to {message.guild.name}!**")
+                except Exception as e:
+                    await message.channel.send(f"❌ Sync failed: `{e}`")
+            return
+
+        await self.process_commands(message)
 
 async def main():
     missing_vars = config.validate_config()
