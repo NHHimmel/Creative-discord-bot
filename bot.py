@@ -67,11 +67,11 @@ class DramaticNarratorBot(commands.Bot):
             logger.error(f"Error syncing application commands: {e}")
 
     async def on_ready(self):
-        logger.info(f"🎭 The Dramatic Narrator has entered the realm as {self.user} (ID: {self.user.id})")
-        logger.info(f"Serving across {len(self.guilds)} guild(s). Ready to chronicle history!")
+        logger.info(f"🗣️ The Yapper has entered the realm as {self.user} (ID: {self.user.id})")
+        logger.info(f"Serving across {len(self.guilds)} guild(s). Ready to yap about your drama!")
         activity = discord.Activity(
             type=discord.ActivityType.watching,
-            name="your chaotic shenanigans | /recap"
+            name="everyone's yapping | /yapper_help"
         )
         await self.change_presence(status=discord.Status.online, activity=activity)
 

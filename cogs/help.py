@@ -4,14 +4,14 @@ from discord.ext import commands
 
 HELP_CATEGORIES = {
     "overview": {
-        "title": "🎭 The Dramatic Narrator & Historian — Guidebook",
+        "title": "🗣️ The Yapper — Server Survival Guide",
         "description": (
-            "Welcome, mortals! I am your server's all-seeing chronicler, roastmaster, and vault keeper.\n\n"
-            "Use the select menu below or /help category:[name] to browse each domain:\n\n"
-            "🎬 **1. Recaps & Roasts** — AI summaries & punchy comedy burns\n"
-            "📜 **2. Server Lore & Chronicles** — Etching history into the archives\n"
+            "Welcome, chatterboxes! I am **The Yapper**—your server's certified master of yap, chief drama officer, and keeper of out-of-context receipts.\n\n"
+            "Use the select menu below or `/help category:[name]` to browse each domain:\n\n"
+            "🎬 **1. Recaps & Roasts** — Hilarious yap summaries & punchy burns\n"
+            "📜 **2. Server Lore & Chronicles** — Etching legendary drama into the archives\n"
             "📸 **3. Out of Context Quote Vault** — Capture quotes, leaderboards & trivia\n"
-            "💰 **4. Economy & Black Market Shop** — Earn coins & buy hilarious friend pranks"
+            "💰 **4. Economy & Black Market Shop** — Earn coins, mute friends, and buy bailouts"
         ),
         "color": 0xD4AF37
     },
@@ -124,8 +124,17 @@ class HelpCog(commands.Cog, name="Help Guide"):
         await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(
+        name="yapper_help",
+        description="Direct help command for The Yapper (avoids conflicts with other bots)."
+    )
+    async def yapper_help(self, interaction: discord.Interaction):
+        embed = build_help_embed("overview")
+        view = HelpView()
+        await interaction.response.send_message(embed=embed, view=view)
+
+    @app_commands.command(
         name="narrator_help",
-        description="Direct help command for The Dramatic Narrator (avoids conflicts with other bots)."
+        description="Direct help command for The Yapper."
     )
     async def narrator_help(self, interaction: discord.Interaction):
         embed = build_help_embed("overview")
@@ -134,7 +143,7 @@ class HelpCog(commands.Cog, name="Help Guide"):
 
     @app_commands.command(
         name="guide",
-        description="Quick user guide for The Dramatic Narrator bot."
+        description="Quick user guide for The Yapper bot."
     )
     async def guide(self, interaction: discord.Interaction):
         embed = build_help_embed("overview")
