@@ -69,6 +69,16 @@ class DramaticNarratorBot(commands.Bot):
     async def on_ready(self):
         logger.info(f"🗣️ The Yapper has entered the realm as {self.user} (ID: {self.user.id})")
         logger.info(f"Serving across {len(self.guilds)} guild(s). Ready to yap about your drama!")
+
+        # Sync commands directly to every currently connected guild
+        for guild in self.guilds:
+            try:
+                self.tree.copy_global_to(guild=guild)
+                synced = await self.tree.sync(guild=guild)
+                logger.info(f"Synced {len(synced)} commands directly to guild: {guild.name} (ID: {guild.id})")
+            except Exception as e:
+                logger.warning(f"Could not direct-sync guild {guild.name}: {e}")
+
         activity = discord.Activity(
             type=discord.ActivityType.watching,
             name="everyone's yapping | /yapper_help"
@@ -78,7 +88,6 @@ class DramaticNarratorBot(commands.Bot):
     async def on_guild_join(self, guild: discord.Guild):
         logger.info(f"🎉 Joined new guild: {guild.name} (ID: {guild.id}). Syncing commands...")
         try:
-            # Sync guild-specific command tree immediately so commands show instantly
             self.tree.copy_global_to(guild=guild)
             synced = await self.tree.sync(guild=guild)
             logger.info(f"Successfully synced {len(synced)} command(s) to new guild: {guild.name}")
@@ -99,13 +108,12 @@ class DramaticNarratorBot(commands.Bot):
 
         # Instant manual sync trigger: type '!sync' in any server where the bot has joined
         if message.content.strip().lower() == "!sync" and message.guild:
-            if message.author.guild_permissions.administrator or await self.is_owner(message.author):
-                try:
-                    self.tree.copy_global_to(guild=message.guild)
-                    synced = await self.tree.sync(guild=message.guild)
-                    await message.channel.send(f"✅ **Synced {len(synced)} slash commands instantly to {message.guild.name}!**")
-                except Exception as e:
-                    await message.channel.send(f"❌ Sync failed: `{e}`")
+            try:
+                self.tree.copy_global_to(guild=message.guild)
+                synced = await self.tree.sync(guild=message.guild)
+                await message.channel.send(f"✅ **Instant Guild Sync Complete!** Synced {len(synced)} slash commands directly to **{message.guild.name}**!\n*(If commands still don't show, press Ctrl+R to reload Discord)*")
+            except Exception as e:
+                await message.channel.send(f"❌ Sync failed: `{e}`")
             return
 
         await self.process_commands(message)
