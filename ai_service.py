@@ -76,25 +76,41 @@ class AIService:
         prompt_system = system_override or SYSTEM_PROMPT
 
         if self.provider == "gemini" and self._gemini_client:
-            # Check if modern google-genai
-            if hasattr(self._gemini_client, "aio") and hasattr(self._gemini_client.aio, "models"):
-                from google.genai import types
-                response = await self._gemini_client.aio.models.generate_content(
-                    model=config.GEMINI_MODEL,
-                    contents=user_prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=prompt_system,
-                        temperature=0.85,
-                    )
-                )
-                return response.text.strip()
-            # Legacy google.generativeai fallback
-            elif hasattr(self._gemini_client, "generate_content_async"):
-                response = await self._gemini_client.generate_content_async(
-                    contents=user_prompt,
-                    generation_config={"temperature": 0.85}
-                )
-                return response.text.strip()
+            # Fallback model hierarchy starting from chosen model down through 3.7, 3.5, and 2.5
+            candidate_models = [config.GEMINI_MODEL, "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash", "gemini-2.5-flash"]
+            # Deduplicate preserving order
+            model_chain = []
+            for m in candidate_models:
+                if m not in model_chain:
+                    model_chain.append(m)
+
+            last_error = None
+            for model_name in model_chain:
+                try:
+                    # Check if modern google-genai
+                    if hasattr(self._gemini_client, "aio") and hasattr(self._gemini_client.aio, "models"):
+                        from google.genai import types
+                        response = await self._gemini_client.aio.models.generate_content(
+                            model=model_name,
+                            contents=user_prompt,
+                            config=types.GenerateContentConfig(
+                                system_instruction=prompt_system,
+                                temperature=0.85,
+                            )
+                        )
+                        return response.text.strip()
+                    # Legacy google.generativeai fallback
+                    elif hasattr(self._gemini_client, "generate_content_async"):
+                        response = await self._gemini_client.generate_content_async(
+                            contents=user_prompt,
+                            generation_config={"temperature": 0.85}
+                        )
+                        return response.text.strip()
+                except Exception as e:
+                    last_error = e
+                    logger.warning(f"Model '{model_name}' encountered an error: {e}. Trying fallback model...")
+
+            raise RuntimeError(f"All Gemini models in fallback chain failed. Last error: {last_error}")
 
         elif self.provider == "openai" and self._openai_client:
             response = await self._openai_client.chat.completions.create(
